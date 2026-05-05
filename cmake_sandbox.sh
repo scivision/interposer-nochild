@@ -70,6 +70,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [[ "$CGEN" == "Ninja" ]]; then
+    :
+    # CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which ninja)"
+else
+    CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which make)"
+fi
+
 # Choose sandbox method
 if [[ "$MODE" == "sandbox" ]]; then
     SND="sandbox-exec -f $SBC"
