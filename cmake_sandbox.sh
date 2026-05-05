@@ -14,7 +14,8 @@ MODE="dylib"
 NICE="nice -n 20"
 CVARS="-DCMAKE_C_COMPILER_WORKS=yes -DCMAKE_CXX_COMPILER_WORKS=yes -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++)"
 CVARS=$CVARS" -DCMake_HAVE_CXX_UNIQUE_PTR=yes -DCMAKE_USE_SYSTEM_LIBARCHIVE=on -DCMAKE_HAVE_LIBC_PTHREAD=on"
-CROOT='-DCMAKE_PREFIX_PATH="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr;/opt/homebrew/opt/libarchive"'
+CROOT="-DCMAKE_PREFIX_PATH=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr"
+CLROOT="-DLibArchive_ROOT=/opt/homebrew/opt/libarchive"
 CPARS="--fresh"
 CEXE="-DCMAKE_EXECUTE_PROCESS_COMMAND_ERROR_IS_FATAL=ANY"
 CGEN="Unix Makefiles"
@@ -79,7 +80,7 @@ else
 fi
 
 # Build command using array (safest way)
-cmd=( $NICE $SND "$CMAKEPATH" -B "$BDIR" -S "$SRC" -G "$CGEN" $CROOT $CVARS $CPARS $CEXE )
+cmd=( $NICE $SND "$CMAKEPATH" -B "$BDIR" -S "$SRC" -G "$CGEN" "$CROOT" "$CLROOT" $CVARS $CPARS $CEXE )
 
 echo "Running: ${cmd[*]}"
 "${cmd[@]}"
