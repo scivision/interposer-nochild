@@ -1,0 +1,13 @@
+(version 1)
+
+;; Allow everything by default (blacklist mode)
+(allow default)
+
+;; === Only deny child creation ===
+(deny process-fork (with no-log))
+(deny process-exec* (with no-log))
+
+;; But explicitly allow the initial launch of CMake itself
+(allow process-exec*
+       ;; (regex #"^cmake$")
+)
