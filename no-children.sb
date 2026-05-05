@@ -4,10 +4,13 @@
 (allow default)
 
 ;; === Only deny child creation ===
-(deny process-fork (with no-log))
 (deny process-exec* (with no-log))
 
-;; But explicitly allow the initial launch of CMake itself
+;; Allow process creation, but only permit exec of cmake and ninja.
+;; Denying process-fork blocks cmake and can lockup macOS before the child path can be checked.
+(allow process-fork)
+
+;; Explicitly allow cmake and ninja to be executed.
 (allow process-exec*
-       ;; (regex #"^cmake$")
+       (regex #"^.*/(cmake|ninja)$")
 )

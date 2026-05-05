@@ -4,7 +4,9 @@
 set -euo pipefail
 
 # Default values
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SRC="."
+SBC="$SCRIPT_DIR/no-children.sb"
 CMAKEPATH=$SRC/build/bin/cmake
 BDIR="/tmp/build_cmake_sandbox"
 MODE="dylib"
@@ -13,7 +15,7 @@ NICE="nice -n 20"
 CVARS="-DCMAKE_C_COMPILER_WORKS=yes -DCMAKE_CXX_COMPILER_WORKS=yes -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++)"
 CVARS=$CVARS" -DCMake_HAVE_CXX_UNIQUE_PTR=yes -DCMAKE_USE_SYSTEM_LIBARCHIVE=on -DCMAKE_HAVE_LIBC_PTHREAD=on"
 CROOT='-DCMAKE_PREFIX_PATH="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr;/opt/homebrew/opt/libarchive"'
-CPARS=$CPARS" --fresh"
+CPARS="--fresh"
 CEXE="-DCMAKE_EXECUTE_PROCESS_COMMAND_ERROR_IS_FATAL=ANY"
 CGEN="Unix Makefiles"
 
@@ -67,17 +69,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ "$CGEN" == "Ninja" ]]; then
-    SBC="./no-children-ninja.sb"
-else
-    SBC="./no-children.sb"
-fi
 # Choose sandbox method
 if [[ "$MODE" == "sandbox" ]]; then
     SND="sandbox-exec -f $SBC"
     echo "Using sandbox-exec"
 else
-    SND="env DYLD_INSERT_LIBRARIES=$HOME/nochild.dylib DYLD_FORCE_FLAT_NAMESPACE=1"
+    SND="env DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib DYLD_FORCE_FLAT_NAMESPACE=1"
     echo "Using DYLD interposer"
 fi
 
