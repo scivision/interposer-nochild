@@ -7,9 +7,23 @@ This technique is demonstrated for Linux and macOS here.
 
 Use `seccomp` and a small helper program.
 
+```sh
+apt install libseccomp-dev
+```
+
+```sh
+make
+```
+
+Then run the sandbox
+
+```sh
+./cmake_sandbox.sh
+```
+
 ## macOS
 
-`sandbox-exec` can lockup macOS if there is an infinite loop in the program when child process launch is denied. 
+`sandbox-exec` can lockup macOS if there is an infinite loop in the program when child process launch is denied.
 One can use this interposer dylib instead on macOS.
 
 Sandbox-exec: simpler, but may lockup macOS requiring hard reboot.
