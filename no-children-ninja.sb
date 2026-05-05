@@ -1,0 +1,16 @@
+(version 1)
+
+;; Allow everything by default (blacklist mode)
+(allow default)
+
+;; === Only deny child creation ===
+(deny process-exec* (with no-log))
+
+;; Allow process creation, but only permit exec of cmake and ninja.
+;; Denying process-fork blocks cmake before the child path can be checked.
+(allow process-fork)
+
+;; Explicitly allow cmake and ninja to be executed.
+(allow process-exec*
+       (regex #"^.*/(cmake|ninja)$")
+)

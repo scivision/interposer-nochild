@@ -1,5 +1,3 @@
-// clang -dynamiclib -o ~/nochild.dylib ~/no-children.c -flat_namespace -undefined dynamic_lookup
-
 #include <spawn.h>
 #include <unistd.h>
 #include <errno.h>
@@ -16,7 +14,6 @@ static void log_blocked(const char *func, const char *cmd) {
 int fork(void)                  { log_blocked("fork", NULL); errno = EACCES; return -1; }
 int vfork(void)                 { log_blocked("vfork", NULL); errno = EACCES; return -1; }
 
-// Correct signatures for posix_spawn / posix_spawnp
 int posix_spawn(pid_t * __restrict pid,
                 const char * __restrict path,
                 const posix_spawn_file_actions_t *file_actions,
