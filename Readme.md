@@ -2,12 +2,12 @@
 
 [![ci](https://github.com/scivision/interposer-nochild/actions/workflows/ci.yml/badge.svg)](https://github.com/scivision/interposer-nochild/actions/workflows/ci.yml)
 
-When testing a program like CMake for internal development, it is useful to deny the program the ablility to execute child processes to help enusre the top program is stable in such cases.
-This technique is demonstrated for Linux, macOS, and Windows.
+When testing a large program for development, it is useful to deny the program the ablility to execute child processes to help enusre the top program is stable in such cases.
+This technique is demonstrated for Linux, macOS, and Windows on compilers including GCC, Clang, MSVC, NVHPC, and oneAPI.
 This is not a cybersecurity sandbox, but rather a limited development tool to test stability of the top program when child process launch fails.
 Actual
 [sandboxing](https://hardenedlinux.org/blog/2024-08-20-gnu/linux-sandboxing-a-brief-review/),
-tools for the platform also deny access to filesystem, network, child processes, etc. such as
+tools for the platform also can deny access to resources including filesystem, network, and/or child processes such as
 [Linux Firejail](https://github.com/netblue30/firejail),
 [macOS App Sandbox](https://developer.apple.com/documentation/xcode/configuring-the-macos-app-sandbox),
 or
@@ -15,7 +15,12 @@ or
 
 ## Preparation
 
-We assume the CMake code under test has already been built like
+This project was designed for the specific purpose of aiding in CMake internal development of CMake itself.
+It can be used with generally any program, but the examples here are all for CMake itself.
+
+We assume the local development
+[source code of CMake](https://gitlab.kitware.com/cmake/cmake)
+has already been built like:
 
 ```sh
 BUILDDIR=/tmp/build
@@ -25,17 +30,15 @@ cmake -S "$SOURCE" -B "$BUILDDIR"
 cmake --build "$BUILDDIR"
 ```
 
-You don't have to use "/tmp/build", it's just for clarity of examples.
-
 Specify the path to this CMake executable using the scripts below with option like `-c $BUILDDIR/bin/cmake -S $SOURCE`.
 
-Build and test this program:
+## Linux
+
+First, build and test our interposer library `./build/libno-children.so`:
 
 ```sh
 cmake --workflow --preset default
 ```
-
-## Linux
 
 A dynamic library with `LD_PRELOAD` can be used to interpose system calls and deny child process launch.
 
@@ -48,6 +51,12 @@ Use interposer
 Separately, the [seccomp](./seccomp) directory shows use of Linux seccomp to deny child process launch.
 
 ## macOS
+
+First, build and test our interposer library `./build/libno-children.dylib`:
+
+```sh
+cmake --workflow default
+```
 
 Akin to Linux `LD_PRELOAD`, on macOS
 [DYLD_INSERT_LIBRARIES](https://theevilbit.github.io/posts/dyld_insert_libraries_dylib_injection_in_macos_osx_deep_dive/)
@@ -74,13 +83,13 @@ Sandbox-exec may lockup macOS requiring hard reboot if there is an infinite loop
 
 ## Windows
 
-We use built-in Windows methods to deny child process launch.
+First, build and test this program to create `./build/no-children.exe`:
 
 ```sh
-mingw32-make
+cmake --workflow default
 ```
 
-Then run the sandbox
+We use built-in Windows methods to deny child process launch:
 
 ```sh
 ./cmake_sandbox.bat -c %BUILDDIR%/bin/cmake.exe -S %SOURCE%
