@@ -10,9 +10,9 @@ SBC="$SCRIPT_DIR/no-children.sb"
 CMAKEPATH=$SRC/build/bin/cmake
 BDIR="/tmp/build_cmake_sandbox"
 MODE="dylib"
-CROOT=""
-CLROOT=""
-CVARS=""
+CROOT=
+CLROOT=
+CVARS=
 
 CPARS="--fresh"
 CEXE="-DCMAKE_EXECUTE_PROCESS_COMMAND_ERROR_IS_FATAL=ANY"
@@ -74,11 +74,11 @@ done
 
 case "$OSTYPE" in
     darwin*)
-        CVARS="-DCMAKE_C_COMPILER_WORKS=yes -DCMAKE_CXX_COMPILER_WORKS=yes"
-        CVARS=$CVARS" -DCMake_HAVE_CXX_UNIQUE_PTR=yes -DCMAKE_USE_SYSTEM_LIBARCHIVE=on -DCMAKE_HAVE_LIBC_PTHREAD=on"
+        # CVARS="-DCMAKE_C_COMPILER_WORKS=yes -DCMAKE_CXX_COMPILER_WORKS=yes"
+        # CVARS=$CVARS" -DCMake_HAVE_CXX_UNIQUE_PTR=yes -DCMAKE_USE_SYSTEM_LIBARCHIVE=on -DCMAKE_HAVE_LIBC_PTHREAD=on"
         CROOT="-DCMAKE_PREFIX_PATH=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr"
-        CLROOT="-DLibArchive_ROOT=/opt/homebrew/opt/libarchive"
-        CVARS=$CVARS" -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++)"
+        # CLROOT="-DLibArchive_ROOT=/opt/homebrew/opt/libarchive"
+        # CVARS=$CVARS" -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++)"
 
         if [[ "$MODE" == "sandbox" ]]; then
             SND="sandbox-exec -f $SBC"
@@ -87,12 +87,12 @@ case "$OSTYPE" in
             SND="env DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib DYLD_FORCE_FLAT_NAMESPACE=1"
             echo "Using DYLD interposer"
         fi
-        if [[ "$CGEN" == "Ninja" ]]; then
-            :
-            # CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which ninja)"
-        else
-            CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which make)"
-        fi
+        # if [[ "$CGEN" == "Ninja" ]]; then
+        #     :
+        #     # CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which ninja)"
+        # else
+        #     CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which make)"
+        # fi
         ;;
     linux*)
         SND=$SCRIPT_DIR/seccomp_run
