@@ -15,25 +15,6 @@
 #include <iostream>
 #include <algorithm>
 
-static std::string Win32ErrorMessage(const DWORD code)
-{
-    LPSTR buffer = nullptr;
-    const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-    const DWORD lang = MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT);
-    const DWORD len = FormatMessageA(flags, nullptr, code, lang, reinterpret_cast<LPSTR>(&buffer), 0, nullptr);
-
-    if (len == 0 || buffer == nullptr) {
-        return "Unknown Win32 error " + std::to_string(code);
-    }
-
-    std::string message(buffer, len);
-    LocalFree(buffer);
-
-    while (!message.empty() && (message.back() == '\r' || message.back() == '\n')) {
-        message.pop_back();
-    }
-    return message;
-}
 
 bool IsWhitelisted(std::string_view path)
 {
@@ -90,8 +71,7 @@ int main(int argc, char* argv[])
 
         // CreateProcess may modify the command-line buffer, so keep it mutable.
         if (!CreateProcessA(nullptr, cmdline.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi)) {
-            const DWORD error = GetLastError();
-            std::cerr << "CreateProcess failed: " << error << " (" << Win32ErrorMessage(error) << ")\n";
+            std::cerr << "CreateProcess failed: " << std::system_category().message(GetLastError()) << "\n";
             return 1;
         }
 
@@ -108,7 +88,7 @@ int main(int argc, char* argv[])
 
     HANDLE hJob = CreateJobObject(nullptr, nullptr);
     if (!hJob) {
-        std::cerr << "CreateJobObject failed: " << Win32ErrorMessage(GetLastError()) << "\n";
+        std::cerr << "CreateJobObject failed: " << std::system_category().message(GetLastError()) << "\n";
         return EXIT_FAILURE;
     }
 
@@ -117,7 +97,7 @@ int main(int argc, char* argv[])
     limits.ActiveProcessLimit = 2;           // cmake + one active grandchild at a time (nochild.exe is outside the job)
 
     if (!SetInformationJobObject(hJob, JobObjectBasicLimitInformation, &limits, sizeof(limits))) {
-        std::cerr << "SetInformationJobObject failed: " << Win32ErrorMessage(GetLastError()) << "\n";
+        std::cerr << "SetInformationJobObject failed: " << std::system_category().message(GetLastError()) << "\n";
         CloseHandle(hJob);
         return EXIT_FAILURE;
     }
@@ -128,15 +108,14 @@ int main(int argc, char* argv[])
     std::string cmdline = BuildQuotedCommandLine(argc, argv);
 
     if (!CreateProcessA(nullptr, cmdline.data(), nullptr, nullptr, FALSE, CREATE_SUSPENDED, nullptr, nullptr, &si, &pi)) {
-        const DWORD error = GetLastError();
-        std::cerr << "CreateProcess failed: " << error << " (" << Win32ErrorMessage(error) << ")\n";
+        std::cerr << "CreateProcess failed: " << std::system_category().message(GetLastError()) << "\n";
         CloseHandle(hJob);
         return EXIT_FAILURE;
     }
 
     // Assign only the child (not this wrapper) to the job, then let it run.
     if (!AssignProcessToJobObject(hJob, pi.hProcess)) {
-        std::cerr << "AssignProcessToJobObject failed: " << Win32ErrorMessage(GetLastError()) << "\n";
+        std::cerr << "AssignProcessToJobObject failed: " << std::system_category().message(GetLastError()) << "\n";
         TerminateProcess(pi.hProcess, 1);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);

@@ -64,4 +64,8 @@ else()
 endif()
 endif()
 
+# need to allow a little time for virus scanners, but avoid eternal hangs
+get_property(test_names DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY TESTS)
+set_property(TEST ${test_names} PROPERTY TIMEOUT 10)
+
 file(GENERATE OUTPUT .gitignore CONTENT "*")
