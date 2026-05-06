@@ -83,7 +83,7 @@ int wmain(int argc, wchar_t* argv[])
 
     JOBOBJECT_BASIC_LIMIT_INFORMATION limits = { 0 };
     limits.LimitFlags = JOB_OBJECT_LIMIT_ACTIVE_PROCESS;
-    limits.ActiveProcessLimit = 2;           // Wrapper + one direct child allowed
+    limits.ActiveProcessLimit = 2;           // cmake + one active grandchild at a time (nochild.exe is outside the job)
 
     if (!SetInformationJobObject(hJob, JobObjectBasicLimitInformation, &limits, sizeof(limits))) {
         wprintf(L"SetInformationJobObject failed\n");
@@ -91,9 +91,7 @@ int wmain(int argc, wchar_t* argv[])
         return 1;
     }
 
-    AssignProcessToJobObject(hJob, GetCurrentProcess());
-
-    // Launch the main command (CMake, etc.)
+    // Launch the main command suspended so we can assign it (not ourselves) to the job.
     STARTUPINFOW si = { sizeof(si) };
     PROCESS_INFORMATION pi;
     wchar_t cmdline[32768] = {0};
@@ -104,11 +102,22 @@ int wmain(int argc, wchar_t* argv[])
         wcscat_s(cmdline, _countof(cmdline), L"\" ");
     }
 
-    if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+    if (!CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {
         wprintf(L"CreateProcess failed: %lu\n", GetLastError());
         CloseHandle(hJob);
         return 1;
     }
+
+    // Assign only the child (not this wrapper) to the job, then let it run.
+    if (!AssignProcessToJobObject(hJob, pi.hProcess)) {
+        wprintf(L"AssignProcessToJobObject failed: %lu\n", GetLastError());
+        TerminateProcess(pi.hProcess, 1);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        CloseHandle(hJob);
+        return 1;
+    }
+    ResumeThread(pi.hThread);
 
     WaitForSingleObject(pi.hProcess, INFINITE);
 

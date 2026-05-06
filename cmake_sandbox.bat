@@ -38,19 +38,23 @@ exit /b 1
 
 :args_done
 
-for /f "tokens=* usebackq" %%i in (`where clang.exe 2^>nul`) do set "CC=%%i" & goto found_cc
-:found_cc
-for /f "tokens=* usebackq" %%i in (`where clang++.exe 2^>nul`) do set "CXX=%%i" & goto found_cxx
-:found_cxx
+@REM for /f "tokens=* usebackq" %%i in (`where clang.exe 2^>nul`) do set "CC=%%i" & goto found_cc
+@REM :found_cc
+@REM for /f "tokens=* usebackq" %%i in (`where clang++.exe 2^>nul`) do set "CXX=%%i" & goto found_cxx
+@REM :found_cxx
 
 set "CVARS=-DCMAKE_CXX_COMPILER_WORKS=yes -DCMAKE_C_COMPILER_WORKS=yes"
-set "CVARS=%CVARS% -DCMAKE_C_COMPILER=%CC%"
-set "CVARS=%CVARS% -DCMAKE_CXX_COMPILER=%CXX%"
+@REM set "CVARS=%CVARS% -DCMAKE_C_COMPILER=%CC%"
+@REM set "CVARS=%CVARS% -DCMAKE_CXX_COMPILER=%CXX%"
+@REM set "CVARS=%CVARS% -DCMAKE_Fortran_COMPILER=%FC%"
 set "CVARS=%CVARS% -DCMake_HAVE_CXX_UNIQUE_PTR=yes"
 
+set "CVARS=%CVARS% -DCMAKE_SIZEOF_VOID_P=8"
+@REM Curl needs this
 
-if exist "%SCRIPT_DIR%\build\bin\cmake.exe" (
-    set "CMAKE_EXE=%SCRIPT_DIR%\build\bin\cmake.exe"
+
+if exist "%SRC%\build\bin\cmake.exe" (
+    set "CMAKE_EXE=%SRC%\build\bin\cmake.exe"
 ) else (
 	set "CMAKE_EXE=cmake.exe"
 )
