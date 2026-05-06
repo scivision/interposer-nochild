@@ -17,14 +17,15 @@ We assume the CMake code under test has already been built like
 
 ```sh
 BUILDDIR=/tmp/build
+SOURCE=/path/to/cmake/source
 
-cmake -S /path/to/cmake_source -B $BUILDDIR
-cmake --build $BUILDDIR
+cmake -S "$SOURCE" -B "$BUILDDIR"
+cmake --build "$BUILDDIR"
 ```
 
 You don't have to use "/tmp/build", it's just for clarity of examples.
 
-Specify the path to this CMake executable using the scripts below with option like `-c $BUILDDIR/bin/cmake`
+Specify the path to this CMake executable using the scripts below with option like `-c $BUILDDIR/bin/cmake -S $SOURCE`.
 
 ## Linux
 
@@ -37,7 +38,7 @@ make
 Use interposer
 
 ```sh
-./cmake_sandbox.sh dylib -c $BUILDDIR/bin/cmake
+./cmake_sandbox.sh dylib -c $BUILDDIR/bin/cmake -S $SOURCE
 ```
 
 
@@ -57,7 +58,7 @@ make
 Use interposer
 
 ```sh
-./cmake_sandbox.sh dylib -c $BUILDDIR/bin/cmake
+./cmake_sandbox.sh dylib -c $BUILDDIR/bin/cmake -S $SOURCE
 ```
 
 ### sandbox-exec
@@ -69,7 +70,7 @@ One can use this interposer dylib instead on macOS.
 Sandbox-exec may lockup macOS requiring hard reboot if there is an infinite loop or recursion in the program when child process launch is denied.
 
 ```sh
-./cmake_sandbox.sh sandbox -c $BUILDDIR/bin/cmake
+./cmake_sandbox.sh sandbox -c $BUILDDIR/bin/cmake -S $SOURCE
 ```
 
 ## Windows
@@ -83,5 +84,5 @@ mingw32-make
 Then run the sandbox
 
 ```sh
-./cmake_sandbox.bat -c %BUILDDIR%/bin/cmake.exe
+./cmake_sandbox.bat -c %BUILDDIR%/bin/cmake.exe -S %SOURCE%
 ```

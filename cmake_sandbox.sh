@@ -59,13 +59,13 @@ done
 case "$OSTYPE" in
     darwin*)
         if [[ "$MODE" == "sandbox" ]]; then
-            SND="sandbox-exec -f $SCRIPT_DIR/no-children.sb"
+            SND=(sandbox-exec -f "$SCRIPT_DIR/no-children.sb")
         else
-            SND="env DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib DYLD_FORCE_FLAT_NAMESPACE=1"
+            SND=(env "DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib" DYLD_FORCE_FLAT_NAMESPACE=1)
         fi
         ;;
     linux*)
-        SND="env LD_PRELOAD=$SCRIPT_DIR/no-children.so"
+        SND=(env "LD_PRELOAD=$SCRIPT_DIR/no-children.so")
         ;;
     *)
         echo "Unsupported OS: $OSTYPE" >&2
@@ -86,7 +86,7 @@ if [[ -z "${CMAKEPATH:-}" ]]; then
 fi
 
 # ====================== Execute ======================
-cmd=( "$SND" "$CMAKEPATH" -B "$BDIR" -S "$SRC" -G "$CGEN" $CPARS "$CEXE" )
+cmd=( "${SND[@]}" "$CMAKEPATH" -B "$BDIR" -S "$SRC" -G "$CGEN" $CPARS "$CEXE" )
 
 echo "Running: ${cmd[*]}"
 "${cmd[@]}"
