@@ -19,6 +19,7 @@ if(APPLE)
   )
 
   add_test(NAME DYLD_SIP_CONTROL COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-sip-control.sh $<TARGET_FILE:no-children>)
+  set_property(TEST DYLD_SIP_CONTROL PROPERTY SKIP_RETURN_CODE 77)
 
 elseif(LINUX)
 
