@@ -1,10 +1,10 @@
-#ifdef __linux__
+#if defined(__linux__)
 #define _GNU_SOURCE
+#include <dlfcn.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
 #endif
 
-#ifdef __linux__
-#include <dlfcn.h>
-#endif
 #include <spawn.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -15,9 +15,6 @@
 #include <string.h>
 #include <limits.h>
 
-#ifdef __APPLE__
-#include <mach-o/dyld.h>
-#endif
 
 #ifdef __linux__
 typedef int (*real_posix_spawn_fn)(pid_t *, const char *, const posix_spawn_file_actions_t *,
@@ -63,9 +60,10 @@ static real_execvpe_fn      get_real_execvpe(void)      { return cached_execvpe;
 
 static const char *allowed_execs[] = {
     "ninja", "ninja-build", "make", "gmake", "cmake",
-    "sh", "bash", "uname",
+    "sh", "bash", "dash", "uname",
     "xcrun", "xcode-select", "sw_vers", "sysctl", "arch",
     "cc", "gcc", "clang", "c++", "g++", "clang++",
+    "cc1", "cc1plus", "collect2",
     "ld", "ar", "ranlib", "as",
     NULL
 };
@@ -120,6 +118,15 @@ static int current_process_whitelisted(void) {
     }
     cached = is_whitelisted_exec(path);
 #else
+#ifdef __GLIBC__
+    if (program_invocation_short_name && *program_invocation_short_name) {
+        cached = is_whitelisted_exec(program_invocation_short_name);
+        if (cached) {
+            return cached;
+        }
+    }
+#endif
+
     char path[PATH_MAX];
     ssize_t n = readlink("/proc/self/exe", path, sizeof(path) - 1);
     if (n <= 0) {
