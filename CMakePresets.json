@@ -1,0 +1,121 @@
+{
+  "version": 6,
+
+"configurePresets": [
+{
+  "name": "default",
+  "binaryDir": "build",
+  "generator": "Ninja",
+  "cacheVariables": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+    "CMAKE_LINK_WARNING_AS_ERROR": true,
+    "BUILD_TESTING": true
+  }
+},
+{ "name": "build", "inherits": "default",
+  "cacheVariables": {
+    "BUILD_TESTING": false
+  },
+  "displayName": "build only (tests disabled)"
+},
+{
+  "name": "debug", "inherits": "default",
+  "cacheVariables": {
+    "CMAKE_BUILD_TYPE": "Debug"
+  }
+},
+{ "name": "reldebug", "inherits": "default",
+  "cacheVariables": {
+    "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+  },
+  "displayName": "Release with Debug Info"
+},
+{
+  "name": "msvc", "inherits": "default",
+  "generator": "Visual Studio 18 2026"
+}
+],
+"buildPresets": [
+  {
+    "name": "default",
+    "configurePreset": "default",
+    "configuration": "Release"
+  },
+  { "name": "build", "inherits": "default", "configurePreset": "build" },
+  { "name": "msvc", "inherits": "default", "configurePreset": "msvc", "jobs": 16 },
+  { "name": "debug", "configurePreset": "debug", "configuration": "Debug" },
+  {
+    "name": "reldebug",
+    "configurePreset": "reldebug",
+    "configuration": "RelWithDebInfo",
+    "displayName": "Release with Debug Info"
+  }
+],
+"testPresets": [
+{
+  "name": "default",
+  "configurePreset": "default",
+  "configuration": "Release",
+  "output": {
+    "outputOnFailure": true,
+    "verbosity": "verbose"
+  },
+  "execution": {
+    "noTestsAction": "error",
+    "scheduleRandom": true,
+    "stopOnFailure": false,
+    "jobs": 4
+  }
+},
+{
+  "name": "reldebug", "inherits": "default",
+  "configurePreset": "reldebug",
+  "configuration": "RelWithDebInfo",
+  "displayName": "Release with Debug Info"
+},
+{ "name": "msvc", "inherits": "default", "configurePreset": "msvc" },
+{
+  "name": "debug", "inherits": "default",
+  "configurePreset": "debug",
+  "configuration": "Debug"
+}
+],
+"workflowPresets": [
+  {
+    "name": "default",
+    "displayName": "build and test",
+    "steps": [
+      { "type": "configure", "name": "default" },
+      { "type": "build", "name": "default" },
+      { "type": "test", "name": "default" }
+    ]
+  },
+  {
+    "name": "build",
+    "displayName": "build only",
+    "steps": [
+      { "type": "configure", "name": "build" },
+      { "type": "build", "name": "build" }
+    ]
+  },
+  {
+    "name": "debug",
+    "displayName": "Debug build and test",
+    "steps": [
+      { "type": "configure", "name": "debug" },
+      { "type": "build", "name": "debug" },
+      { "type": "test", "name": "debug" }
+    ]
+  },
+  {
+    "name": "msvc",
+    "displayName": "MSVC build and test",
+    "steps": [
+      { "type": "configure", "name": "msvc" },
+      { "type": "build", "name": "msvc" },
+      { "type": "test", "name": "msvc" }
+    ]
+  }
+]
+}

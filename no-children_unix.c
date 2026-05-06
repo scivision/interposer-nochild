@@ -230,7 +230,10 @@ static pid_t nochild_fork(void) {
 static pid_t nochild_vfork(void) {
     if (current_process_whitelisted()) {
 #ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         return vfork();
+#pragma clang diagnostic pop
 #else
         real_fork_fn real_fn = get_real_vfork();
         if (real_fn) return real_fn();
@@ -322,7 +325,10 @@ static int nochild_execvpe(const char *file, char *const argv[], char *const env
 DYLD_INTERPOSE(nochild_posix_spawn, posix_spawn)
 DYLD_INTERPOSE(nochild_posix_spawnp, posix_spawnp)
 DYLD_INTERPOSE(nochild_fork, fork)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 DYLD_INTERPOSE(nochild_vfork, vfork)
+#pragma clang diagnostic pop
 DYLD_INTERPOSE(nochild_execve, execve)
 DYLD_INTERPOSE(nochild_execv, execv)
 DYLD_INTERPOSE(nochild_execvp, execvp)

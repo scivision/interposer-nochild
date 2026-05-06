@@ -61,11 +61,11 @@ case "$OSTYPE" in
         if [[ "$MODE" == "sandbox" ]]; then
             SND=(sandbox-exec -f "$SCRIPT_DIR/no-children.sb")
         else
-            SND=(env -u DYLD_PRINT_LIBRARIES -u DYLD_PRINT_APIS -u DYLD_PRINT_OPTS "DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib")
+            SND=(env -u DYLD_PRINT_LIBRARIES -u DYLD_PRINT_APIS -u DYLD_PRINT_OPTS "DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/build/libno-children.dylib")
         fi
         ;;
     linux*)
-        SND=(env "LD_PRELOAD=$SCRIPT_DIR/no-children.so")
+        SND=(env "LD_PRELOAD=$SCRIPT_DIR/build/libno-children.so")
         ;;
     *)
         echo "Unsupported OS: $OSTYPE" >&2

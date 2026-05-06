@@ -81,4 +81,4 @@ if defined CMAKE_EXE_FROM_ARG (
 set "BUILD_DIR=%TEMP%\build_cmake_sandbox"
 
 @echo on
-"%SCRIPT_DIR%\no-children.exe" "%CMAKE_EXE%" %GENERATOR% -B "%BUILD_DIR%" -S "%SRC%" %CVARS% %CEXE% --fresh
+"%SCRIPT_DIR%\build\no-children.exe" "%CMAKE_EXE%" %GENERATOR% -B "%BUILD_DIR%" -S "%SRC%" %CVARS% %CEXE% --fresh

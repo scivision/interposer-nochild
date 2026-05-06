@@ -27,26 +27,21 @@ You don't have to use "/tmp/build", it's just for clarity of examples.
 
 Specify the path to this CMake executable using the scripts below with option like `-c $BUILDDIR/bin/cmake -S $SOURCE`.
 
+Build and test this program:
+
+```sh
+cmake --workflow --preset default
+```
+
 ## Linux
 
 A dynamic library with `LD_PRELOAD` can be used to interpose system calls and deny child process launch.
-
-```sh
-make
-```
-
-Optional self-tests:
-
-```sh
-make test
-```
 
 Use interposer
 
 ```sh
 ./cmake_sandbox.sh dylib -c $BUILDDIR/bin/cmake -S $SOURCE
 ```
-
 
 Separately, the [seccomp](./seccomp) directory shows use of Linux seccomp to deny child process launch.
 
@@ -56,16 +51,6 @@ Akin to Linux `LD_PRELOAD`, on macOS
 [DYLD_INSERT_LIBRARIES](https://theevilbit.github.io/posts/dyld_insert_libraries_dylib_injection_in_macos_osx_deep_dive/)
 can be used to interpose system calls thereby denying child process launch.
 This has the usual SIP limitations for intercepting system process calls.
-
-```sh
-make
-```
-
-Optional self-tests:
-
-```sh
-make test test-sip-control
-```
 
 Use interposer
 
