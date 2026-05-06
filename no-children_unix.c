@@ -2,13 +2,16 @@
 #define _GNU_SOURCE
 #endif
 
+#ifdef __linux__
 #include <dlfcn.h>
+#endif
 #include <spawn.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
@@ -16,6 +19,7 @@
 #include <mach-o/dyld.h>
 #endif
 
+#ifdef __linux__
 typedef int (*real_posix_spawn_fn)(pid_t *, const char *, const posix_spawn_file_actions_t *,
                                    const posix_spawnattr_t *, char *const[], char *const[]);
 typedef int (*real_posix_spawnp_fn)(pid_t *, const char *, const posix_spawn_file_actions_t *,
@@ -24,12 +28,43 @@ typedef pid_t (*real_fork_fn)(void);
 typedef int (*real_execve_fn)(const char *, char *const[], char *const[]);
 typedef int (*real_execv_fn)(const char *, char *const[]);
 typedef int (*real_execvp_fn)(const char *, char *const[]);
-#ifdef __linux__
 typedef int (*real_execvpe_fn)(const char *, char *const[], char *const[]);
-#endif
+
+static real_posix_spawn_fn cached_posix_spawn = NULL;
+static real_posix_spawnp_fn cached_posix_spawnp = NULL;
+static real_fork_fn cached_fork = NULL;
+static real_fork_fn cached_vfork = NULL;
+static real_execve_fn cached_execve = NULL;
+static real_execv_fn cached_execv = NULL;
+static real_execvp_fn cached_execvp = NULL;
+static real_execvpe_fn cached_execvpe = NULL;
+
+__attribute__((constructor))
+static void nochild_init(void) {
+    cached_posix_spawn  = (real_posix_spawn_fn) dlsym(RTLD_NEXT, "posix_spawn");
+    cached_posix_spawnp = (real_posix_spawnp_fn)dlsym(RTLD_NEXT, "posix_spawnp");
+    cached_fork         = (real_fork_fn)         dlsym(RTLD_NEXT, "fork");
+    cached_vfork        = (real_fork_fn)         dlsym(RTLD_NEXT, "vfork");
+    cached_execve       = (real_execve_fn)       dlsym(RTLD_NEXT, "execve");
+    cached_execv        = (real_execv_fn)        dlsym(RTLD_NEXT, "execv");
+    cached_execvp       = (real_execvp_fn)       dlsym(RTLD_NEXT, "execvp");
+    cached_execvpe      = (real_execvpe_fn)      dlsym(RTLD_NEXT, "execvpe");
+}
+
+static real_posix_spawn_fn  get_real_posix_spawn(void)  { return cached_posix_spawn; }
+static real_posix_spawnp_fn get_real_posix_spawnp(void) { return cached_posix_spawnp; }
+static real_fork_fn         get_real_fork(void)         { return cached_fork; }
+static real_fork_fn         get_real_vfork(void)        { return cached_vfork; }
+static real_execve_fn       get_real_execve(void)       { return cached_execve; }
+static real_execv_fn        get_real_execv(void)        { return cached_execv; }
+static real_execvp_fn       get_real_execvp(void)       { return cached_execvp; }
+static real_execvpe_fn      get_real_execvpe(void)      { return cached_execvpe; }
+#endif /* __linux__ */
 
 static const char *allowed_execs[] = {
     "ninja", "ninja-build", "make", "gmake", "cmake",
+    "sh", "bash", "uname",
+    "xcrun", "xcode-select", "sw_vers", "sysctl", "arch",
     "cc", "gcc", "clang", "c++", "g++", "clang++",
     "ld", "ar", "ranlib", "as",
     NULL
@@ -73,24 +108,56 @@ static int is_whitelisted_exec(const char *path_or_file) {
 }
 
 static int current_process_whitelisted(void) {
+    static int cached = -1;
+    if (cached >= 0) return cached;
+
 #ifdef __APPLE__
     char path[PATH_MAX];
     uint32_t size = (uint32_t)sizeof(path);
-    if (_NSGetExecutablePath(path, &size) != 0) return 0;
-    return is_whitelisted_exec(path);
+    if (_NSGetExecutablePath(path, &size) != 0) {
+        cached = 0;
+        return cached;
+    }
+    cached = is_whitelisted_exec(path);
 #else
     char path[PATH_MAX];
     ssize_t n = readlink("/proc/self/exe", path, sizeof(path) - 1);
-    if (n <= 0) return 0;
+    if (n <= 0) {
+        cached = 0;
+        return cached;
+    }
     path[n] = '\0';
-    return is_whitelisted_exec(path);
+    cached = is_whitelisted_exec(path);
 #endif
+    return cached;
 }
 
 
 void log_blocked(const char *func, const char *cmd) {
     static int count = 0;
-    if (++count > 200) return;
+    static int initialized = 0;
+    static int log_max = 200;
+    static int log_every = 1000;
+
+    if (!initialized) {
+        const char *max_env = getenv("NOCHILD_LOG_MAX");
+        const char *every_env = getenv("NOCHILD_LOG_EVERY");
+        if (max_env && *max_env) {
+            log_max = atoi(max_env);
+        }
+        if (every_env && *every_env) {
+            log_every = atoi(every_env);
+        }
+        initialized = 1;
+    }
+
+    ++count;
+    if (log_max >= 0 && count > log_max) {
+        if (log_every <= 0 || (count % log_every) != 0) {
+            return;
+        }
+    }
+
     fprintf(stderr, "[NOCHILD %3d] Blocked %-12s → %s\n",
             count, func, cmd ? cmd : "(null)");
 }
@@ -102,8 +169,13 @@ static int nochild_posix_spawn(pid_t *pid,
                                char *const argv[],
                                char *const envp[]) {
     if (is_whitelisted_exec(path)) {
-        real_posix_spawn_fn real_fn = (real_posix_spawn_fn)dlsym(RTLD_NEXT, "posix_spawn");
-        return real_fn(pid, path, file_actions, attrp, argv, envp);
+#ifdef __APPLE__
+        return posix_spawn(pid, path, file_actions, attrp, argv, envp);
+#else
+        real_posix_spawn_fn real_fn = get_real_posix_spawn();
+        if (real_fn) return real_fn(pid, path, file_actions, attrp, argv, envp);
+        errno = ENOSYS; return ENOSYS;
+#endif
     }
 
     log_blocked("posix_spawn", path);
@@ -118,8 +190,13 @@ static int nochild_posix_spawnp(pid_t *pid,
                                 char *const argv[],
                                 char *const envp[]) {
     if (is_whitelisted_exec(file)) {
-        real_posix_spawnp_fn real_fn = (real_posix_spawnp_fn)dlsym(RTLD_NEXT, "posix_spawnp");
-        return real_fn(pid, file, file_actions, attrp, argv, envp);
+#ifdef __APPLE__
+        return posix_spawnp(pid, file, file_actions, attrp, argv, envp);
+#else
+        real_posix_spawnp_fn real_fn = get_real_posix_spawnp();
+        if (real_fn) return real_fn(pid, file, file_actions, attrp, argv, envp);
+        errno = ENOSYS; return ENOSYS;
+#endif
     }
 
     log_blocked("posix_spawnp", file);
@@ -129,8 +206,13 @@ static int nochild_posix_spawnp(pid_t *pid,
 
 static pid_t nochild_fork(void) {
     if (current_process_whitelisted()) {
-        real_fork_fn real_fn = (real_fork_fn)dlsym(RTLD_NEXT, "fork");
-        return real_fn();
+#ifdef __APPLE__
+        return fork();
+#else
+        real_fork_fn real_fn = get_real_fork();
+        if (real_fn) return real_fn();
+        errno = ENOSYS; return -1;
+#endif
     }
 
     log_blocked("fork", NULL);
@@ -140,8 +222,13 @@ static pid_t nochild_fork(void) {
 
 static pid_t nochild_vfork(void) {
     if (current_process_whitelisted()) {
-        real_fork_fn real_fn = (real_fork_fn)dlsym(RTLD_NEXT, "vfork");
-        return real_fn();
+#ifdef __APPLE__
+        return vfork();
+#else
+        real_fork_fn real_fn = get_real_vfork();
+        if (real_fn) return real_fn();
+        errno = ENOSYS; return -1;
+#endif
     }
 
     log_blocked("vfork", NULL);
@@ -151,8 +238,13 @@ static pid_t nochild_vfork(void) {
 
 static int nochild_execve(const char *path, char *const argv[], char *const envp[]) {
     if (is_whitelisted_exec(path)) {
-        real_execve_fn real_fn = (real_execve_fn)dlsym(RTLD_NEXT, "execve");
-        return real_fn(path, argv, envp);
+#ifdef __APPLE__
+        return execve(path, argv, envp);
+#else
+        real_execve_fn real_fn = get_real_execve();
+        if (real_fn) return real_fn(path, argv, envp);
+        errno = ENOSYS; return -1;
+#endif
     }
 
     log_blocked("execve", path);
@@ -162,8 +254,13 @@ static int nochild_execve(const char *path, char *const argv[], char *const envp
 
 static int nochild_execv(const char *path, char *const argv[]) {
     if (is_whitelisted_exec(path)) {
-        real_execv_fn real_fn = (real_execv_fn)dlsym(RTLD_NEXT, "execv");
-        return real_fn(path, argv);
+#ifdef __APPLE__
+        return execv(path, argv);
+#else
+        real_execv_fn real_fn = get_real_execv();
+        if (real_fn) return real_fn(path, argv);
+        errno = ENOSYS; return -1;
+#endif
     }
 
     log_blocked("execv", path);
@@ -173,8 +270,13 @@ static int nochild_execv(const char *path, char *const argv[]) {
 
 static int nochild_execvp(const char *file, char *const argv[]) {
     if (is_whitelisted_exec(file)) {
-        real_execvp_fn real_fn = (real_execvp_fn)dlsym(RTLD_NEXT, "execvp");
-        return real_fn(file, argv);
+#ifdef __APPLE__
+        return execvp(file, argv);
+#else
+        real_execvp_fn real_fn = get_real_execvp();
+        if (real_fn) return real_fn(file, argv);
+        errno = ENOSYS; return -1;
+#endif
     }
 
     log_blocked("execvp", file);
@@ -185,8 +287,12 @@ static int nochild_execvp(const char *file, char *const argv[]) {
 #ifdef __linux__
 static int nochild_execvpe(const char *file, char *const argv[], char *const envp[]) {
     if (is_whitelisted_exec(file)) {
-        real_execvpe_fn real_fn = (real_execvpe_fn)dlsym(RTLD_NEXT, "execvpe");
-        return real_fn(file, argv, envp);
+        real_execvpe_fn real_fn = get_real_execvpe();
+        if (real_fn) {
+            return real_fn(file, argv, envp);
+        }
+        errno = ENOSYS;
+        return -1;
     }
 
     log_blocked("execvpe", file);

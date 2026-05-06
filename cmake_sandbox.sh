@@ -61,7 +61,7 @@ case "$OSTYPE" in
         if [[ "$MODE" == "sandbox" ]]; then
             SND=(sandbox-exec -f "$SCRIPT_DIR/no-children.sb")
         else
-            SND=(env "DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib" DYLD_FORCE_FLAT_NAMESPACE=1)
+            SND=(env -u DYLD_PRINT_LIBRARIES -u DYLD_PRINT_APIS -u DYLD_PRINT_OPTS "DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib")
         fi
         ;;
     linux*)

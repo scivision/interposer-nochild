@@ -31,12 +31,12 @@ $(SELFTEST): nochild-selftest.c
 
 test: all $(SELFTEST)
 	@echo "[test] Running interposer self-test with DYLD_INSERT_LIBRARIES"
-	@env DYLD_INSERT_LIBRARIES="$(CURDIR)/no-children.dylib" DYLD_FORCE_FLAT_NAMESPACE=1 ./$(SELFTEST)
+	@env DYLD_INSERT_LIBRARIES="$(CURDIR)/no-children.dylib" ./$(SELFTEST)
 
 test-sip-control: all
 	@echo "[test-sip-control] Probing a protected system binary (/usr/bin/make)"
 	@tmp=$$(mktemp); \
-	  DYLD_PRINT_LIBRARIES=1 DYLD_INSERT_LIBRARIES="$(CURDIR)/no-children.dylib" DYLD_FORCE_FLAT_NAMESPACE=1 /usr/bin/make -v > $$tmp 2>&1 || true; \
+	  DYLD_PRINT_LIBRARIES=1 DYLD_INSERT_LIBRARIES="$(CURDIR)/no-children.dylib" /usr/bin/make -v > $$tmp 2>&1 || true; \
 	  if grep -q "$(CURDIR)/no-children.dylib" $$tmp; then \
 	    echo "[test-sip-control] Interposer was loaded into /usr/bin/make on this system."; \
 	    echo "[test-sip-control] This binary/path is not acting as a SIP negative control here."; \
