@@ -48,6 +48,10 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         -v|--verbose)
+            CPARS=$CPARS" --trace-expand"
+            shift
+            ;;
+        -vv)
             CPARS=$CPARS" --trace-expand --debug-output"
             shift
             ;;
