@@ -18,12 +18,14 @@ if(APPLE)
     COMMAND ${CMAKE_COMMAND} -E env DYLD_INSERT_LIBRARIES=$<TARGET_FILE:no-children> $<TARGET_FILE:nochild-selftest>
   )
 
-  add_test(NAME DYLD_SIP_CONTROL COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test/test-sip-control.sh $<TARGET_FILE:no-children>)
+  add_test(NAME DYLD_SIP_CONTROL COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-sip-control.sh $<TARGET_FILE:no-children>)
+
 elseif(LINUX)
 
   add_test(NAME LD_PRELOAD
     COMMAND ${CMAKE_COMMAND} -E env LD_PRELOAD=$<TARGET_FILE:no-children> $<TARGET_FILE:nochild-selftest>
   )
+
 endif()
 
 # need to allow a little time for virus scanners, but avoid eternal hangs

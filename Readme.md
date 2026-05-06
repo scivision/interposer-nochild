@@ -1,5 +1,7 @@
 # Interposer to deny child process launch
 
+[![ci](https://github.com/scivision/interposer-nochild/actions/workflows/ci.yml/badge.svg)](https://github.com/scivision/interposer-nochild/actions/workflows/ci.yml)
+
 When testing a program like CMake for internal development, it is useful to deny the program the ablility to execute child processes to help enusre the top program is stable in such cases.
 This technique is demonstrated for Linux, macOS, and Windows.
 This is not a cybersecurity sandbox, but rather a limited development tool to test stability of the top program when child process launch fails.
