@@ -37,7 +37,23 @@ static int is_allowed_exec(const char *path)
     if (base == NULL || *base == '\0') {
         return 0;
     }
-    return strcmp(base, "ninja") == 0 || strcmp(base, "make") == 0;
+    return strcmp(base, "ninja") == 0 ||
+           strcmp(base, "make") == 0 ||
+           strcmp(base, "gmake") == 0 ||
+           strcmp(base, "cmake") == 0 ||
+           strcmp(base, "cc1") == 0 ||
+           strcmp(base, "cc1plus") == 0 ||
+           strcmp(base, "c++") == 0 ||
+           strcmp(base, "cc") == 0 ||
+           strcmp(base, "gcc") == 0 ||
+           strcmp(base, "g++") == 0 ||
+           strcmp(base, "clang") == 0 ||
+           strcmp(base, "clang++") == 0 ||
+           strcmp(base, "gfortran") == 0 ||
+           strcmp(base, "ld") == 0 ||
+           strcmp(base, "ar") == 0 ||
+           strcmp(base, "ranlib") == 0 ||
+           strcmp(base, "as") == 0;
 }
 
 static int read_remote_cstring(pid_t pid, unsigned long long remote_addr, char *buf, size_t buf_size)
