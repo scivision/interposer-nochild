@@ -1,3 +1,4 @@
 *.dylib
 *.so
 *.exe
+seccomp_run

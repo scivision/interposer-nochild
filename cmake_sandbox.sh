@@ -1,24 +1,19 @@
 #!/bin/bash
-# cmake_sandbox.sh - Run CMake with child-process blocking
+# cmake_sandbox.sh - Run CMake with child-process blocking (Linux + macOS)
 
 set -euo pipefail
 
-# Default values
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-SRC="."
-SBC="$SCRIPT_DIR/no-children.sb"
-CMAKEPATH=$SRC/build/bin/cmake
-BDIR="/tmp/build_cmake_sandbox"
-MODE="dylib"
-CROOT=
-CLROOT=
-CVARS=
 
+# ====================== Defaults ======================
+SRC="."
+BDIR="/tmp/build_cmake_sandbox"
+MODE="dylib"                    # dylib (macOS safe) or sandbox
+CGEN="Unix Makefiles"
 CPARS="--fresh"
 CEXE="-DCMAKE_EXECUTE_PROCESS_COMMAND_ERROR_IS_FATAL=ANY"
-CGEN="Unix Makefiles"
 
-# Parse arguments
+# ====================== Argument Parsing ======================
 while [[ $# -gt 0 ]]; do
     case "$1" in
         sandbox|dylib)
@@ -26,84 +21,75 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -G|--generator)
-            if [[ $# -lt 2 ]]; then
-                echo "Error: $1 requires a generator name"
-                echo "Usage: $0 [sandbox|dylib] [-G generator] [-S source_directory]"
-                exit 1
-            fi
             CGEN="$2"
             shift 2
             ;;
-        -h|--help)
-            echo "Usage: $0 [sandbox|dylib] [-G generator] [-S source_directory]"
-            exit 0
+        -c)
+            CMAKEPATH="$2"
+            shift 2
             ;;
         -S)
-            if [[ $# -lt 2 ]]; then
-                echo "Error: $1 requires a source directory"
-                echo "Usage: $0 [sandbox|dylib] [-G generator] [-S source_directory]"
-                exit 1
-            fi
             SRC="$2"
             shift 2
             ;;
         -v|--verbose)
-            CPARS=$CPARS" --trace-expand"
+            CPARS="$CPARS --trace-expand"
             shift
             ;;
-        -vv)
-            CPARS=$CPARS" --trace-expand --debug-output"
+        -d|--debug)
+            CPARS="$CPARS --debug-output"
             shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [sandbox|dylib] [-G generator] [-S source_dir] [-c cmake_path] [-d|--debug] [-v|--verbose]"
+            exit 0
             ;;
         -*)
-            echo "Error: Unknown option '$1'"
-            echo "Usage: $0 [sandbox|dylib] [-G generator] [-S source_directory]"
+            echo "Error: Unknown option '$1'" >&2
             exit 1
             ;;
         *)
-            if [[ "$SRC" != "." ]]; then
-                echo "Error: Unexpected extra argument '$1'"
-                echo "Usage: $0 [sandbox|dylib] [-G generator] [-S source_directory]"
-                exit 1
-            fi
             SRC="$1"
             shift
             ;;
     esac
 done
 
+# ====================== Platform Setup ======================
 case "$OSTYPE" in
     darwin*)
-        # CVARS="-DCMAKE_C_COMPILER_WORKS=yes -DCMAKE_CXX_COMPILER_WORKS=yes"
-        # CVARS=$CVARS" -DCMake_HAVE_CXX_UNIQUE_PTR=yes -DCMAKE_USE_SYSTEM_LIBARCHIVE=on -DCMAKE_HAVE_LIBC_PTHREAD=on"
-        CROOT="-DCMAKE_PREFIX_PATH=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr"
-        # CLROOT="-DLibArchive_ROOT=/opt/homebrew/opt/libarchive"
-        # CVARS=$CVARS" -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++)"
-
         if [[ "$MODE" == "sandbox" ]]; then
-            SND="sandbox-exec -f $SBC"
+            SND="sandbox-exec -f $SCRIPT_DIR/no-children.sb"
             echo "Using sandbox-exec"
         else
             SND="env DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib DYLD_FORCE_FLAT_NAMESPACE=1"
             echo "Using DYLD interposer"
         fi
-        # if [[ "$CGEN" == "Ninja" ]]; then
-        #     :
-        #     # CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which ninja)"
-        # else
-        #     CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which make)"
-        # fi
         ;;
     linux*)
-        SND=$SCRIPT_DIR/seccomp_run
+        SND="$SCRIPT_DIR/seccomp_run"
         ;;
     *)
-        echo "Unsupported OS: $OSTYPE"
+        echo "Unsupported OS: $OSTYPE" >&2
+        echo "if on Windows use cmake_sandbox.bat instead" >&2
         exit 1
         ;;
 esac
 
-cmd=( $SND "$CMAKEPATH" -B "$BDIR" -S "$SRC" -G "$CGEN" "$CROOT" "$CLROOT" $CVARS $CPARS $CEXE )
+# If not defined by -c, default to source-tree CMake, then fall back to PATH.
+if [[ -z "${CMAKEPATH:-}" ]]; then
+    CMAKEPATH="$SRC/build/bin/cmake"
+    if [[ ! -x "$CMAKEPATH" ]]; then
+        CMAKEPATH="$(which cmake)"
+        if [[ -z "$CMAKEPATH" ]]; then
+            echo "Error: cmake not found at '$SRC/build/bin/cmake' or in PATH. Please specify with -c." >&2
+            exit 1
+        fi
+    fi
+fi
+
+# ====================== Execute ======================
+cmd=( "$SND" "$CMAKEPATH" -B "$BDIR" -S "$SRC" -G "$CGEN" $CPARS "$CEXE" )
 
 echo "Running: ${cmd[*]}"
 "${cmd[@]}"
