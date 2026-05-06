@@ -12,8 +12,7 @@ BDIR="/tmp/build_cmake_sandbox"
 MODE="dylib"
 CROOT=""
 CLROOT=""
-# default to dylib (safer on macOS)
-NICE="nice -n 20"
+
 CVARS="-DCMAKE_C_COMPILER_WORKS=yes -DCMAKE_CXX_COMPILER_WORKS=yes"
 CVARS=$CVARS" -DCMake_HAVE_CXX_UNIQUE_PTR=yes -DCMAKE_USE_SYSTEM_LIBARCHIVE=on -DCMAKE_HAVE_LIBC_PTHREAD=on"
 CPARS="--fresh"
@@ -70,13 +69,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ "$CGEN" == "Ninja" ]]; then
-    :
-    # CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which ninja)"
-else
-    CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which make)"
-fi
-
 case "$OSTYPE" in
     darwin*)
         CROOT="-DCMAKE_PREFIX_PATH=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr"
@@ -90,9 +82,14 @@ case "$OSTYPE" in
             SND="env DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib DYLD_FORCE_FLAT_NAMESPACE=1"
             echo "Using DYLD interposer"
         fi
+        if [[ "$CGEN" == "Ninja" ]]; then
+            :
+            # CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which ninja)"
+        else
+            CPARS=$CPARS" -DCMAKE_MAKE_PROGRAM=$(which make)"
+        fi
         ;;
     linux*)
-        CVARS=$CVARS" -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_CXX_COMPILER=$(which g++)"
         SND=$SCRIPT_DIR/seccomp_run
         ;;
     *)
@@ -101,8 +98,7 @@ case "$OSTYPE" in
         ;;
 esac
 
-# Build command using array (safest way)
-cmd=( $NICE $SND "$CMAKEPATH" -B "$BDIR" -S "$SRC" -G "$CGEN" "$CROOT" "$CLROOT" $CVARS $CPARS $CEXE )
+cmd=( $SND "$CMAKEPATH" -B "$BDIR" -S "$SRC" -G "$CGEN" "$CROOT" "$CLROOT" $CVARS $CPARS $CEXE )
 
 echo "Running: ${cmd[*]}"
 "${cmd[@]}"
