@@ -52,6 +52,7 @@ static int is_allowed_exec(const char *path)
            strcmp(base, "clang") == 0 ||
            strcmp(base, "clang++") == 0 ||
            strcmp(base, "gfortran") == 0 ||
+           strcmp(base, "f95") == 0 ||
            strcmp(base, "ld") == 0 ||
            strcmp(base, "ar") == 0 ||
            strcmp(base, "ranlib") == 0 ||

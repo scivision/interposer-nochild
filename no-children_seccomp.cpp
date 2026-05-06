@@ -82,7 +82,7 @@ static const std::unordered_set<std::string_view> ALLOWED_COMMANDS = {
     "sh", "bash", "dash",
     "c++", "cc", "gcc", "g++",
     "clang", "clang++",
-    "gfortran",
+    "gfortran", "f95", "flang",
     "ld", "ar", "ranlib", "as",
     "uname", "pkg-config", "git"   // ← added common tools CMake uses
 };
