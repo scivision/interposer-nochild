@@ -92,8 +92,8 @@ static int read_remote_cstring(pid_t pid, unsigned long long remote_addr, char *
 static void respond_deny(struct seccomp_notif_resp *resp, uint64_t id, int err)
 {
     resp->id = id;
-    resp->val = -1;
-    resp->error = err;
+    resp->val = 0;
+    resp->error = -err;
     resp->flags = 0;
 }
 
