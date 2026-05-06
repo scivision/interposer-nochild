@@ -35,6 +35,12 @@ A dynamic library with `LD_PRELOAD` can be used to interpose system calls and de
 make
 ```
 
+Optional self-tests:
+
+```sh
+make test
+```
+
 Use interposer
 
 ```sh
@@ -53,6 +59,12 @@ This has the usual SIP limitations for intercepting system process calls.
 
 ```sh
 make
+```
+
+Optional self-tests:
+
+```sh
+make test test-sip-control
 ```
 
 Use interposer

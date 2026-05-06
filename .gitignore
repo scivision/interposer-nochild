@@ -3,3 +3,4 @@
 *.o
 *.exe
 seccomp_run
+nochild-selftest
