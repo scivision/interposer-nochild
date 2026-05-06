@@ -87,7 +87,11 @@ static void respond_continue(struct seccomp_notif_resp *resp, uint64_t id)
     resp->flags = SECCOMP_USER_NOTIF_FLAG_CONTINUE;
 }
 
-static int handle_notification(int notify_fd, struct seccomp_notif *req, struct seccomp_notif_resp *resp)
+static int handle_notification(int notify_fd,
+                               struct seccomp_notif *req,
+                               struct seccomp_notif_resp *resp,
+                               pid_t traced_child,
+                               int *child_first_exec_seen)
 {
     int rc;
     char path[512];
@@ -116,6 +120,12 @@ static int handle_notification(int notify_fd, struct seccomp_notif *req, struct 
         return -1;
     }
 
+    if (req->pid == traced_child && !(*child_first_exec_seen)) {
+        *child_first_exec_seen = 1;
+        respond_continue(resp, req->id);
+        goto send_response;
+    }
+
     if (req->data.nr == SCMP_SYS(execve)) {
         path_ptr = req->data.args[0];
     } else if (req->data.nr == SCMP_SYS(execveat)) {
@@ -129,6 +139,11 @@ static int handle_notification(int notify_fd, struct seccomp_notif *req, struct 
     if (read_remote_cstring(req->pid, path_ptr, path, sizeof(path)) == 0) {
         have_path = 1;
         allow = is_allowed_exec(path);
+    }
+
+    if (have_path && path[0] == '\0' && req->data.nr == SCMP_SYS(execveat)) {
+        // execveat with AT_EMPTY_PATH has no pathname string to basename-match.
+        allow = 0;
     }
 
     if (allow) {
@@ -158,6 +173,7 @@ int main(int argc, char **argv)
     pid_t child;
     struct seccomp_notif *req = NULL;
     struct seccomp_notif_resp *resp = NULL;
+    int child_first_exec_seen = 0;
 
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <command> [args...]\n", argv[0]);
@@ -248,7 +264,7 @@ int main(int argc, char **argv)
         }
 
         if (pfd.revents & POLLIN) {
-            if (handle_notification(notify_fd, req, resp) < 0) {
+            if (handle_notification(notify_fd, req, resp, child, &child_first_exec_seen) < 0) {
                 break;
             }
         }
