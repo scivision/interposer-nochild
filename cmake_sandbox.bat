@@ -4,6 +4,7 @@ if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 
 set "GENERATOR="
 set "SRC=."
+set "CMAKE_EXE_FROM_ARG="
 
 set CEXE="-DCMAKE_EXECUTE_PROCESS_COMMAND_ERROR_IS_FATAL=ANY"
 
@@ -32,8 +33,20 @@ if /I "%~1"=="-S" (
     goto parse_args
 )
 
+if /I "%~1"=="-c" (
+    if "%~2"=="" (
+        echo Missing value for -c
+        exit /b 1
+    )
+    set "CMAKE_EXE=%~2"
+    set "CMAKE_EXE_FROM_ARG=1"
+    shift
+    shift
+    goto parse_args
+)
+
 echo Unknown argument: %~1
-echo Usage: %~nx0 [-G "Generator Name"] [-S source_dir]
+echo Usage: %~nx0 [-G "Generator Name"] [-S source_dir] [-c cmake_executable]
 exit /b 1
 
 :args_done
@@ -52,11 +65,17 @@ set "CVARS=%CVARS% -DCMake_HAVE_CXX_UNIQUE_PTR=yes"
 set "CVARS=%CVARS% -DCMAKE_SIZEOF_VOID_P=8"
 @REM Curl needs this
 
-
-if exist "%SRC%\build\bin\cmake.exe" (
-    set "CMAKE_EXE=%SRC%\build\bin\cmake.exe"
+if defined CMAKE_EXE_FROM_ARG (
+    if not exist "%CMAKE_EXE%" (
+        echo Error: -c path not found: "%CMAKE_EXE%"
+        exit /b 1
+    )
 ) else (
-	set "CMAKE_EXE=cmake.exe"
+    if exist "%SRC%\build\bin\cmake.exe" (
+        set "CMAKE_EXE=%SRC%\build\bin\cmake.exe"
+    ) else (
+        set "CMAKE_EXE=cmake.exe"
+    )
 )
 
 set "BUILD_DIR=%TEMP%\build_cmake_sandbox"

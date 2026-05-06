@@ -10,7 +10,7 @@ cmake -B build
 cmake --build build
 ```
 
-And that you execute `cmake_sandbox.{sh,bat}` from the root of the CMake source tree.
+Specify the path to this CMake executable using the scripts below with option `-c /path/to/dev/cmake` e.g. `-c build/bin/cmake`
 
 ## Linux
 
@@ -27,7 +27,7 @@ make
 Then run the sandbox
 
 ```sh
-./cmake_sandbox.sh
+./cmake_sandbox.sh -c /path/to/dev/cmake
 ```
 
 ## macOS
@@ -38,7 +38,7 @@ One can use this interposer dylib instead on macOS.
 Sandbox-exec: simpler, but may lockup macOS requiring hard reboot.
 
 ```sh
-./cmake_sandbox.sh sandbox
+./cmake_sandbox.sh sandbox -c /path/to/dev/cmake
 ```
 
 Or, build interposer no-children.dylib
@@ -50,7 +50,7 @@ make
 Use interposer
 
 ```sh
-./cmake_sandbox.sh dylib
+./cmake_sandbox.sh dylib -c /path/to/dev/cmake
 ```
 
 ## Windows
@@ -64,5 +64,5 @@ mingw32-make
 Then run the sandbox
 
 ```sh
-./cmake_sandbox.bat
+./cmake_sandbox.bat -c /path/to/dev/cmake.exe
 ```
