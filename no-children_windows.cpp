@@ -1,9 +1,9 @@
 // nochild.cpp - Windows version: blocks most child processes but allows whitelisted tools
 #include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <wchar.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cwchar>
 
 bool IsWhitelisted(const wchar_t* path)
 {

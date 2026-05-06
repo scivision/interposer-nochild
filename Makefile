@@ -5,7 +5,7 @@ ifeq ($(OS),Windows_NT)
 
 all: no-children.exe
 
-no-children.exe: no-children-windows.cpp
+no-children.exe: no-children_windows.cpp
 	$(CXX) $(CXXFLAGS) -municode -o $@ $< $(LDFLAGS)
 
 else
@@ -16,26 +16,23 @@ UNAME_S := $(shell uname)
 
 COPTS = -std=c99 -Wall -O2 -fPIC
 
-log_blocked.o: log_blocked.c
-	$(CC) $(COPTS) -c -o $@ $<
-
 ifeq ($(UNAME_S),Darwin)
 
 all: no-children.dylib
 
-no-children.dylib: no-children_macos.c log_blocked.o
+no-children.dylib: no-children_unix.c
 	$(CC) -dynamiclib $(COPTS) -o $@ $^ -flat_namespace -undefined dynamic_lookup
 
 else ifeq ($(UNAME_S),Linux)
 
 all: no-children.so
 
-no-children.so: no-children_linux.c log_blocked.o
+no-children.so: no-children_unix.c
 	$(CC) -shared $(COPTS) -o $@ $^ -ldl
 
 endif
 
 clean:
-	$(RM) no-children.so no-children.dylib log_blocked.o
+	$(RM) no-children.so no-children.dylib
 
 endif
