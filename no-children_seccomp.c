@@ -43,6 +43,8 @@ static int is_allowed_exec(const char *path)
            strcmp(base, "cmake") == 0 ||
            strcmp(base, "cc1") == 0 ||
            strcmp(base, "cc1plus") == 0 ||
+           strcmp(base, "collect2") == 0 ||
+           strcmp(base, "sh") == 0 ||
            strcmp(base, "c++") == 0 ||
            strcmp(base, "cc") == 0 ||
            strcmp(base, "gcc") == 0 ||
