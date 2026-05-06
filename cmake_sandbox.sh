@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # ====================== Defaults ======================
 SRC="."
 BDIR="/tmp/build_cmake_sandbox"
-MODE="dylib"                    # dylib (macOS safe) or sandbox
+MODE="dylib"                    # dylib (dynamic library *.{dylib,so}) or sandbox
 CGEN="Unix Makefiles"
 CPARS="--fresh"
 CEXE="-DCMAKE_EXECUTE_PROCESS_COMMAND_ERROR_IS_FATAL=ANY"
@@ -60,18 +60,15 @@ case "$OSTYPE" in
     darwin*)
         if [[ "$MODE" == "sandbox" ]]; then
             SND="sandbox-exec -f $SCRIPT_DIR/no-children.sb"
-            echo "Using sandbox-exec"
         else
             SND="env DYLD_INSERT_LIBRARIES=$SCRIPT_DIR/no-children.dylib DYLD_FORCE_FLAT_NAMESPACE=1"
-            echo "Using DYLD interposer"
         fi
         ;;
     linux*)
-        SND="$SCRIPT_DIR/seccomp_run"
+        SND="env LD_PRELOAD=$SCRIPT_DIR/no-children.so"
         ;;
     *)
         echo "Unsupported OS: $OSTYPE" >&2
-        echo "if on Windows use cmake_sandbox.bat instead" >&2
         exit 1
         ;;
 esac
