@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         std::string cmdline = BuildQuotedCommandLine(argc, argv);
 
         // CreateProcess may modify the command-line buffer, so keep it mutable.
-        if (!CreateProcessA(NULL, cmdline.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        if (!CreateProcessA(nullptr, cmdline.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi)) {
             const DWORD error = GetLastError();
             std::cerr << "CreateProcess failed: " << error << " (" << Win32ErrorMessage(error) << ")\n";
             return 1;
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
     // === For everything else (especially CMake), apply strict limit ===
     std::cout << "[nochild] Applying child process restriction to: " << cmd << "\n";
 
-    HANDLE hJob = CreateJobObject(NULL, NULL);
+    HANDLE hJob = CreateJobObject(nullptr, nullptr);
     if (!hJob) {
         std::cerr << "CreateJobObject failed: " << Win32ErrorMessage(GetLastError()) << "\n";
         return EXIT_FAILURE;
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
     PROCESS_INFORMATION pi;
     std::string cmdline = BuildQuotedCommandLine(argc, argv);
 
-    if (!CreateProcessA(NULL, cmdline.data(), NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {
+    if (!CreateProcessA(nullptr, cmdline.data(), nullptr, nullptr, FALSE, CREATE_SUSPENDED, nullptr, nullptr, &si, &pi)) {
         const DWORD error = GetLastError();
         std::cerr << "CreateProcess failed: " << error << " (" << Win32ErrorMessage(error) << ")\n";
         CloseHandle(hJob);

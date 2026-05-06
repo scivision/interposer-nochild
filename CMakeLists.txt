@@ -15,6 +15,14 @@ endif()
 if(WIN32)
   add_executable(no-children no-children_windows.cpp)
   target_compile_features(no-children PRIVATE cxx_std_23)
+
+  if(BUILD_TESTING)
+    add_executable(nochild-selftest test/nochild-selftest-windows.cpp)
+    target_compile_features(nochild-selftest PRIVATE cxx_std_23)
+    add_test(NAME ProcessLimitBlocking
+      COMMAND no-children $<TARGET_FILE:nochild-selftest>
+    )
+  endif()
 else()
 
   set(copts "$<$<CONFIG:Debug,RelWithDebInfo>:-Wall>")
