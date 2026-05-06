@@ -43,3 +43,17 @@ Use interposer
 ```sh
 ./cmake_sandbox.sh dylib
 ```
+
+## Windows
+
+We use built-in Windows methods to deny child process launch. This is the default when running the sandbox on Windows.
+
+```sh
+mingw32-make
+```
+
+Then run the sandbox
+
+```sh
+./cmake_sandbox.bat
+```
