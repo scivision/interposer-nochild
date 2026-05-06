@@ -1,7 +1,16 @@
 # Interposer to deny child process launch
 
 When testing a program like CMake for internal development, it is useful to deny the program the ablility to execute child processes to help enusre the top program is stable in such cases.
-This technique is demonstrated for Linux and macOS here.
+This technique is demonstrated for Linux, macOS, and Windows.
+
+We assume the CMake code under test has already been built like
+
+```sh
+cmake -B build
+cmake --build build
+```
+
+And that you execute `cmake_sandbox.{sh,bat}` from the root of the CMake source tree.
 
 ## Linux
 
@@ -46,7 +55,7 @@ Use interposer
 
 ## Windows
 
-We use built-in Windows methods to deny child process launch. This is the default when running the sandbox on Windows.
+We use built-in Windows methods to deny child process launch.
 
 ```sh
 mingw32-make
