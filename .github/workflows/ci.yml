@@ -38,6 +38,9 @@ jobs:
     - &test
       run: cmake --workflow default
 
+    - &example
+      run: cmake -Dopts="" -P run_sandbox.cmake
+
     - &upload-fail
       name: upload CMakeConfigureLog.yaml
       if: failure() && hashFiles('build/CMakeFiles/CMakeConfigureLog.yaml') != ''
@@ -61,6 +64,7 @@ jobs:
     steps:
     - *checkout
     - *test
+    - *example
     - *upload-fail
 
 
@@ -88,6 +92,7 @@ jobs:
 
     - *checkout
     - *test
+    - *example
     - *upload-fail
 
 
@@ -98,4 +103,5 @@ jobs:
     steps:
     - *checkout
     - run: cmake --workflow msvc
+    - *example
     - *upload-fail

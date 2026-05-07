@@ -17,7 +17,7 @@ if(Git_FOUND)
     if(NOT git_result EQUAL 0)
         message(STATUS "PASS: Git help blocked as expected (exit code ${git_result})")
     else()
-        message(WARNING "FAIL: Git help not blocked as expected (exit code ${git_result})")
+        message(FATAL_ERROR "FAIL: Git help not blocked as expected (exit code ${git_result})")
     endif()
 
 endif()
