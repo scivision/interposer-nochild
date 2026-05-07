@@ -31,6 +31,7 @@ if(WIN32)
   find_program(nochildren NAMES no-children
   PATHS "${CMAKE_CURRENT_LIST_DIR}/build"
   HINTS ${lib}
+  PATH_SUFFIXES Release RelWithDebInfo Debug
   NO_DEFAULT_PATH
   REQUIRED
   )
@@ -46,8 +47,10 @@ endif()
 if(NOT DEFINED CMAKE_GENERATOR)
 if(DEFINED ENV{CMAKE_GENERATOR})
   set(CMAKE_GENERATOR $ENV{CMAKE_GENERATOR})
-else()
-  set(CMAKE_GENERATOR "Ninja")
+elseif(MSVC)
+  # pass
+elseif(WIN32)
+  set(CMAKE_GENERATOR "MinGW Makefiles")
 endif()
 endif()
 
@@ -65,12 +68,15 @@ else()
   set(BDIR /tmp/build_sandbox_run)
 endif()
 
-set(base_cmd ${cmake} -B${BDIR} -S${source} ${CEXE} --fresh -G "${CMAKE_GENERATOR}" ${opts})
+set(base_cmd ${cmake} -B${BDIR} -S${source} ${CEXE} --fresh ${opts})
 if(trace)
   list(APPEND base_cmd "--trace-expand")
 endif()
 if(debug)
   list(APPEND base_cmd "--debug-output")
+endif()
+if(CMAKE_GENERATOR)
+  list(APPEND base_cmd -G "${CMAKE_GENERATOR}")
 endif()
 
 if(WIN32)
