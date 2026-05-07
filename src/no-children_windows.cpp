@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ostream> // for std::endl
 
 #include <string>
 #include <system_error>
@@ -56,7 +57,7 @@ static std::string BuildQuotedCommandLine(int argc, char* argv[])
 int main(int argc, char* argv[])
 {
     if (argc < 2) {
-        std::cout << "Usage: nochild.exe <command> [args...]\n";
+        std::cout << "Usage: nochild.exe <command> [args...]" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -64,14 +65,14 @@ int main(int argc, char* argv[])
 
     // If the command itself is whitelisted (ninja, cl, etc.), run it without restrictions
     if (IsWhitelisted(cmd)) {
-        std::cout << "[nochild] Whitelisted tool detected → running without restrictions: " << cmd << "\n";
+        std::cout << "[nochild] Whitelisted tool detected → running without restrictions: " << cmd << std::endl;
         STARTUPINFOA si = { sizeof(si) };
         PROCESS_INFORMATION pi;
         std::string cmdline = BuildQuotedCommandLine(argc, argv);
 
         // CreateProcess may modify the command-line buffer, so keep it mutable.
         if (!CreateProcessA(nullptr, cmdline.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi)) {
-            std::cerr << "CreateProcess failed: " << std::system_category().message(GetLastError()) << "\n";
+            std::cerr << "CreateProcess failed: " << std::system_category().message(GetLastError()) << std::endl;
             return 1;
         }
 
@@ -84,11 +85,11 @@ int main(int argc, char* argv[])
     }
 
     // === For everything else (especially CMake), apply strict limit ===
-    std::cout << "[nochild] Applying child process restriction to: " << cmd << "\n";
+    std::cout << "[nochild] Applying child process restriction to: " << cmd << std::endl;
 
     HANDLE hJob = CreateJobObject(nullptr, nullptr);
     if (!hJob) {
-        std::cerr << "CreateJobObject failed: " << std::system_category().message(GetLastError()) << "\n";
+        std::cerr << "CreateJobObject failed: " << std::system_category().message(GetLastError()) << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
     limits.ActiveProcessLimit = 2;           // cmake + one active grandchild at a time (nochild.exe is outside the job)
 
     if (!SetInformationJobObject(hJob, JobObjectBasicLimitInformation, &limits, sizeof(limits))) {
-        std::cerr << "SetInformationJobObject failed: " << std::system_category().message(GetLastError()) << "\n";
+        std::cerr << "SetInformationJobObject failed: " << std::system_category().message(GetLastError()) << std::endl;
         CloseHandle(hJob);
         return EXIT_FAILURE;
     }
@@ -108,14 +109,14 @@ int main(int argc, char* argv[])
     std::string cmdline = BuildQuotedCommandLine(argc, argv);
 
     if (!CreateProcessA(nullptr, cmdline.data(), nullptr, nullptr, FALSE, CREATE_SUSPENDED, nullptr, nullptr, &si, &pi)) {
-        std::cerr << "CreateProcess failed: " << std::system_category().message(GetLastError()) << "\n";
+        std::cerr << "CreateProcess failed: " << std::system_category().message(GetLastError()) << std::endl;
         CloseHandle(hJob);
         return EXIT_FAILURE;
     }
 
     // Assign only the child (not this wrapper) to the job, then let it run.
     if (!AssignProcessToJobObject(hJob, pi.hProcess)) {
-        std::cerr << "AssignProcessToJobObject failed: " << std::system_category().message(GetLastError()) << "\n";
+        std::cerr << "AssignProcessToJobObject failed: " << std::system_category().message(GetLastError()) << std::endl;
         TerminateProcess(pi.hProcess, 1);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
