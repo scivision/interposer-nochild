@@ -15,6 +15,7 @@
 #include <array>
 #include <iostream>
 #include <algorithm>
+#include <thread>
 
 
 bool IsWhitelisted(std::string_view path)
@@ -103,6 +104,29 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    // Associate the job with an IOCP so we can receive per-event notifications.
+    HANDLE hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 1);
+    if (hIOCP) {
+        JOBOBJECT_ASSOCIATE_COMPLETION_PORT assoc = {};
+        assoc.CompletionKey  = hJob;   // use job handle as the key to identify our job's messages
+        assoc.CompletionPort = hIOCP;
+        SetInformationJobObject(hJob, JobObjectAssociateCompletionPortInformation, &assoc, sizeof(assoc));
+    }
+
+    // Monitor thread: logs each blocked process-creation attempt.
+    std::thread monitor([hIOCP, hJob]() {
+        if (!hIOCP) return;
+        DWORD      msgId;
+        ULONG_PTR  key;
+        LPOVERLAPPED overlapped;
+        while (GetQueuedCompletionStatus(hIOCP, &msgId, &key, &overlapped, INFINITE)) {
+            if (key != reinterpret_cast<ULONG_PTR>(hJob)) break;  // sentinel posted after child exits
+            if (msgId == JOB_OBJECT_MSG_ACTIVE_PROCESS_LIMIT) {
+                std::cerr << "[nochild] blocked: process creation denied (active process limit)" << std::endl;
+            }
+        }
+    });
+
     // Launch the main command suspended so we can assign it (not ourselves) to the job.
     STARTUPINFOA si = { sizeof(si) };
     PROCESS_INFORMATION pi;
@@ -110,6 +134,7 @@ int main(int argc, char* argv[])
 
     if (!CreateProcessA(nullptr, cmdline.data(), nullptr, nullptr, FALSE, CREATE_SUSPENDED, nullptr, nullptr, &si, &pi)) {
         std::cerr << "CreateProcess failed: " << std::system_category().message(GetLastError()) << std::endl;
+        if (hIOCP) { PostQueuedCompletionStatus(hIOCP, 0, 0, nullptr); monitor.join(); CloseHandle(hIOCP); }
         CloseHandle(hJob);
         return EXIT_FAILURE;
     }
@@ -120,12 +145,22 @@ int main(int argc, char* argv[])
         TerminateProcess(pi.hProcess, 1);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+        if (hIOCP) { PostQueuedCompletionStatus(hIOCP, 0, 0, nullptr); monitor.join(); CloseHandle(hIOCP); }
         CloseHandle(hJob);
         return EXIT_FAILURE;
     }
     ResumeThread(pi.hThread);
 
     WaitForSingleObject(pi.hProcess, INFINITE);
+
+    // Signal monitor thread to exit, then clean up.
+    if (hIOCP) {
+        PostQueuedCompletionStatus(hIOCP, 0, 0, nullptr);  // key=0, not hJob → thread breaks
+        monitor.join();
+        CloseHandle(hIOCP);
+    } else {
+        monitor.join();
+    }
 
     DWORD exitCode;
     GetExitCodeProcess(pi.hProcess, &exitCode);
