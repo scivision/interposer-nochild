@@ -30,44 +30,30 @@ cmake -S "$SOURCE" -B "$BUILDDIR"
 cmake --build "$BUILDDIR"
 ```
 
-Specify the path to this CMake executable using the scripts below with option like `-c $BUILDDIR/bin/cmake -S $SOURCE`.
-
-## Linux
-
-First, build and test our interposer library `./build/libno-children.so`:
+Build and test our "no-children" interposer library (macOS, Linux) / executable (Windows) next:
 
 ```sh
 cmake --workflow --preset default
 ```
 
-A dynamic library with `LD_PRELOAD` can be used to interpose system calls and deny child process launch.
-
-Use interposer
+A cross-platform example script `cmake_sandbox.cmake` demonstrates how to use this interposer.
 
 ```sh
-./cmake_sandbox.sh dylib -c $BUILDDIR/bin/cmake -S $SOURCE
+cmake -P cmake_sandbox.cmake
 ```
+
+## Linux
+
+A dynamic library with `LD_PRELOAD` can be used to interpose system calls and deny child process launch.
 
 Separately, the [seccomp](./seccomp) directory shows use of Linux seccomp to deny child process launch.
 
 ## macOS
 
-First, build and test our interposer library `./build/libno-children.dylib`:
-
-```sh
-cmake --workflow default
-```
-
 Akin to Linux `LD_PRELOAD`, on macOS
 [DYLD_INSERT_LIBRARIES](https://theevilbit.github.io/posts/dyld_insert_libraries_dylib_injection_in_macos_osx_deep_dive/)
 can be used to interpose system calls thereby denying child process launch.
 This has the usual SIP limitations for intercepting system process calls.
-
-Use interposer
-
-```sh
-./cmake_sandbox.sh dylib -c $BUILDDIR/bin/cmake -S $SOURCE
-```
 
 ### sandbox-exec
 
@@ -78,19 +64,5 @@ One can use this interposer dylib instead on macOS.
 Sandbox-exec may lockup macOS requiring hard reboot if there is an infinite loop or recursion in the program when child process launch is denied.
 
 ```sh
-./cmake_sandbox.sh sandbox -c $BUILDDIR/bin/cmake -S $SOURCE
-```
-
-## Windows
-
-First, build and test this program to create `./build/no-children.exe`:
-
-```sh
-cmake --workflow default
-```
-
-We use built-in Windows methods to deny child process launch:
-
-```sh
-./cmake_sandbox.bat -c %BUILDDIR%/bin/cmake.exe -S %SOURCE%
+cmake -Dmode=sandbox -P cmake_sandbox.cmake
 ```
