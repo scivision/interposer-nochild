@@ -14,12 +14,12 @@ static int expect_blocked_fork(void) {
     errno = 0;
     pid_t p = fork();
     if (p == -1 && errno == EACCES) {
-        fprintf(stderr, "[selftest] fork blocked as expected (EACCES)\n");
+        printf("[selftest] fork blocked as expected (EACCES)\n");
         return 0;
     }
 
     if (p == 0) {
-        _exit(0);
+        _Exit(0);
     }
     if (p > 0) {
         int st = 0;
@@ -39,7 +39,7 @@ static int expect_blocked_spawnp(void) {
     errno = 0;
     int rc = posix_spawnp(&p, "echo", NULL, NULL, argv, environ);
     if (rc == EACCES) {
-        fprintf(stderr, "[selftest] posix_spawnp blocked as expected (EACCES)\n");
+        printf("[selftest] posix_spawnp blocked as expected (EACCES)\n");
         return 0;
     }
 
