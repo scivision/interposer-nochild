@@ -8,13 +8,3 @@ We specifically disclaim any correctness of our example code, which is a demonst
 ```sh
 apt install libseccomp-dev
 ```
-
-```sh
-make
-```
-
-Then run the sandbox
-
-```sh
-./cmake_sandbox.sh -c /path/to/dev/cmake
-```

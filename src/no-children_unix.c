@@ -60,11 +60,12 @@ static real_execvpe_fn      get_real_execvpe(void)      { return cached_execvpe;
 
 static const char *allowed_execs[] = {
     "ninja", "ninja-build", "make", "gmake", "cmake",
-    "sh", "bash", "dash", "uname",
+    "uname",
     "xcrun", "xcode-select", "sw_vers", "sysctl", "arch",
     "cc", "gcc", "clang", "c++", "g++", "clang++",
     "cc1", "cc1plus", "collect2",
     "ld", "ar", "ranlib", "as",
+    // "sh", "bash", "dash",
     NULL
 };
 

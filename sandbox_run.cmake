@@ -1,21 +1,21 @@
-# cmake_sandbox.cmake - Run CMake with child-process blocking (cross-platform)
+# sandbox_run.cmake - Run CMake with child-process blocking (cross-platform)
 
 cmake_minimum_required(VERSION 3.25)
 
 function(print_help)
-  message(STATUS "Usage: cmake -Dsource=<project_source_dir> -Dcmake=<path to cmake exe> [-Dlib=<path to no-children library or executable>] -P cmake_sandbox.cmake")
+  message(STATUS "Usage: cmake -Dsource=<project_source_dir> -Dcmake=<path to cmake exe> [-Dlib=<path to no-children library or executable>] -P sandbox_run.cmake")
 endfunction()
 
 option(debug "--debug-output")
 option(trace "--trace-expand")
 
 if(NOT DEFINED source)
-  set(source ${CMAKE_CURRENT_LIST_DIR})
+  set(source ${CMAKE_CURRENT_LIST_DIR}/example)
 endif()
 
 find_program(cmake
 NAMES cmake
-HINTS ${source}
+HINTS $ENV{PWD} $ENV{CD}
 PATH_SUFFIXES bin build/bin
 )
 if(NOT cmake)
@@ -54,11 +54,11 @@ endif()
 set(opts "-DCMAKE_EXECUTE_PROCESS_COMMAND_ERROR_IS_FATAL=ANY")
 
 if(DEFINED ENV{TEMP})
-  set(BDIR $ENV{TEMP}/build_cmake_sandbox)
+  set(BDIR $ENV{TEMP}/build_sandbox_run)
 elseif(DEFINED ENV{TMPDIR})
-  set(BDIR $ENV{TMPDIR}/build_cmake_sandbox)
+  set(BDIR $ENV{TMPDIR}/build_sandbox_run)
 else()
-  set(BDIR /tmp/build_cmake_sandbox)
+  set(BDIR /tmp/build_sandbox_run)
 endif()
 
 set(base_cmd ${cmake} -B${BDIR} -S${source} ${CEXE} --fresh -G "${CMAKE_GENERATOR}" ${opts})

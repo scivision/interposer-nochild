@@ -36,10 +36,10 @@ Build and test our "no-children" interposer library (macOS, Linux) / executable 
 cmake --workflow --preset default
 ```
 
-A cross-platform example script `cmake_sandbox.cmake` demonstrates how to use this interposer.
+A cross-platform example script `sandbox_run.cmake` demonstrates how to use this interposer.
 
 ```sh
-cmake -P cmake_sandbox.cmake
+cmake -P sandbox_run.cmake
 ```
 
 ## Linux
@@ -64,5 +64,5 @@ One can use this interposer dylib instead on macOS.
 Sandbox-exec may lockup macOS requiring hard reboot if there is an infinite loop or recursion in the program when child process launch is denied.
 
 ```sh
-cmake -Dmode=sandbox -P cmake_sandbox.cmake
+cmake -Dmode=sandbox -P sandbox_run.cmake
 ```

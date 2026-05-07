@@ -11,7 +11,7 @@ option(BUILD_TESTING "Build tests" ON)
 if(WIN32)
   enable_language(CXX)
 
-  add_executable(no-children no-children_windows.cpp)
+  add_executable(no-children src/no-children_windows.cpp)
   target_compile_features(no-children PRIVATE cxx_std_23)
 
 else()
@@ -22,7 +22,7 @@ else()
   check_pie_supported()
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-  add_library(no-children SHARED no-children_unix.c)
+  add_library(no-children SHARED src/no-children_unix.c)
   target_compile_features(no-children PRIVATE c_std_99)
   target_compile_options(no-children PRIVATE ${copts})
 
