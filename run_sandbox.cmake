@@ -1,9 +1,9 @@
-# sandbox_run.cmake - Run CMake with child-process blocking (cross-platform)
+# run_sandbox.cmake - Run CMake with child-process blocking (cross-platform)
 
 cmake_minimum_required(VERSION 3.25)
 
 function(print_help)
-  message(STATUS "Usage: cmake -Dsource=<project_source_dir> -Dcmake=<path to cmake exe> [-Dlib=<path to no-children library or executable>] -P sandbox_run.cmake")
+  message(STATUS "Usage: cmake -Dsource=<project_source_dir> -Dcmake=<path to cmake exe> [-Dlib=<path to no-children library or executable>] -P run_sandbox.cmake")
 endfunction()
 
 option(debug "--debug-output")
@@ -51,7 +51,11 @@ else()
 endif()
 endif()
 
-set(opts "-DCMAKE_EXECUTE_PROCESS_COMMAND_ERROR_IS_FATAL=ANY")
+if(NOT DEFINED opts)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 4.0)
+  set(opts "-DCMAKE_EXECUTE_PROCESS_COMMAND_ERROR_IS_FATAL=ANY")
+endif()
+endif()
 
 if(DEFINED ENV{TEMP})
   set(BDIR $ENV{TEMP}/build_sandbox_run)
