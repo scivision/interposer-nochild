@@ -37,12 +37,6 @@ static real_execv_fn cached_execv = NULL;
 static real_execvp_fn cached_execvp = NULL;
 static real_execvpe_fn cached_execvpe = NULL;
 
-/* A dup of the original stderr saved at load time, so log messages reach the
- * terminal even when the child process has redirected fd 2 (e.g. CMake sets
- * up an ERROR_QUIET pipe before fork()). FD_CLOEXEC keeps it from leaking
- * into successfully exec'd children. */
-static int nochild_log_fd = STDERR_FILENO;
-
 __attribute__((constructor))
 static void nochild_init(void) {
     cached_posix_spawn  = (real_posix_spawn_fn) dlsym(RTLD_NEXT, "posix_spawn");
@@ -53,12 +47,6 @@ static void nochild_init(void) {
     cached_execv        = (real_execv_fn)        dlsym(RTLD_NEXT, "execv");
     cached_execvp       = (real_execvp_fn)       dlsym(RTLD_NEXT, "execvp");
     cached_execvpe      = (real_execvpe_fn)      dlsym(RTLD_NEXT, "execvpe");
-
-    int fd = dup(STDERR_FILENO);
-    if (fd >= 0) {
-        fcntl(fd, F_SETFD, FD_CLOEXEC);
-        nochild_log_fd = fd;
-    }
 }
 
 static real_posix_spawn_fn  get_real_posix_spawn(void)  { return cached_posix_spawn; }
@@ -70,6 +58,21 @@ static real_execv_fn        get_real_execv(void)        { return cached_execv; }
 static real_execvp_fn       get_real_execvp(void)       { return cached_execvp; }
 static real_execvpe_fn      get_real_execvpe(void)      { return cached_execvpe; }
 #endif /* __linux__ */
+
+/* A dup of the original stderr saved at load time, so log messages reach the
+ * terminal even when the child process has redirected fd 2 (e.g. CMake sets
+ * up an ERROR_QUIET pipe before fork()). FD_CLOEXEC keeps it from leaking
+ * into successfully exec'd children. */
+static int nochild_log_fd = STDERR_FILENO;
+
+__attribute__((constructor))
+static void nochild_log_init(void) {
+    int fd = dup(STDERR_FILENO);
+    if (fd >= 0) {
+        fcntl(fd, F_SETFD, FD_CLOEXEC);
+        nochild_log_fd = fd;
+    }
+}
 
 static const char *allowed_execs[] = {
     "ninja", "ninja-build", "make", "gmake", "cmake",

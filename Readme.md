@@ -13,22 +13,8 @@ tools for the platform also can deny access to resources including filesystem, n
 or
 [Windows Sandbox](https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/).
 
-## Preparation
-
 This project was designed for the specific purpose of aiding in CMake internal development of CMake itself.
 It can be used with generally any program, but the examples here are all for CMake itself.
-
-We assume the local development
-[source code of CMake](https://gitlab.kitware.com/cmake/cmake)
-has already been built like:
-
-```sh
-BUILDDIR=/tmp/build
-SOURCE=/path/to/cmake/source
-
-cmake -S "$SOURCE" -B "$BUILDDIR"
-cmake --build "$BUILDDIR"
-```
 
 Build and test our "no-children" interposer library (macOS, Linux) / executable (Windows) next:
 
